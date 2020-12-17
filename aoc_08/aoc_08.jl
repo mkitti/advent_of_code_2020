@@ -1,4 +1,4 @@
-module aoc_17
+module aoc_08
     export read_input
 
     const instruction_r = r"([a-z]*) ([+\-]*[0-9]*)"
@@ -42,6 +42,21 @@ module aoc_17
         end
         return accumulator
     end
+
+    # Part 2
+
+    struct State
+        accumulator::UInt64
+        i::Int
+        evaluated::Vector{Bool}
+        switched::Bool
+    end
+
+    import Base.copy
+    copy(s::State) = State(s.accumulator, i, copy(evaluated), switched)
+    State(sz::Tuple{Int}) = State(0, 1, falses(sz), false)
+    State(in::AbstractArray) = State( size(in) )
+
     function evaluate_and_fix(in::Vector{Instruction}, accumulator = 0, i = 1, evaluated = falses( size(in) ), switched = false)
         last = length(in)
         while i <= last && !evaluated[i]
