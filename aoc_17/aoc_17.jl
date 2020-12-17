@@ -40,6 +40,7 @@ module aoc_17
                 i += in[i].value
             end
         end
+        return accumulator
     end
     function evaluate_and_fix(in::Vector{Instruction}, accumulator = 0, i = 1, evaluated = falses( size(in) ), switched = false)
         last = length(in)
