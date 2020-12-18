@@ -63,7 +63,7 @@ module aoc_17
     # === End NeighborhoodFilter type === #
 
     # n-Dimensional step
-    function step(universe::BitArray{N}) where {N}
+    function step(universe::BitArray{N}, make_compact = true) where {N}
         universe = padarray(universe, Fill(0, ntuple(i->1, N) ) )
         neighbors = round.(imfilter(universe, NeighborhoodFilter{N}(), Fill(0)))
         # If a cube is active and exactly 2 or 3 of its neighbors are also active, the cube remains active. Otherwise, the cube becomes inactive.
@@ -73,7 +73,11 @@ module aoc_17
         inactive = @view universe[ inactive_state ]
         active .= remain_active( neighbors[ active_state ] )
         inactive .= become_active( neighbors[ inactive_state ] )
-        compact(universe)
+        if make_compact
+            compact(universe)
+        else
+            universe
+        end
     end
 
     function test2()
