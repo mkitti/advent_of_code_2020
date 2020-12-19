@@ -25,7 +25,7 @@ const rules_dict = Dict{Int,AbstractRule}()
 Regex(r::SimpleRule) = r.rule
 Regex(r::SeriesRule) = *( Regex.( [ rules_dict[i] for i in r.rules])... )
 Regex(r::CompoundRule) = Regex(r.rules[1]) | Regex(r.rules[2])
-function Regex(r::LoopingRule, n)
+function Regex(r::LoopingRule)
     inner = r.rule
     if rules_dict[ inner.rules[2].rules[end] ] == r
         # Rule 8: sub-rule can repeat
@@ -35,12 +35,11 @@ function Regex(r::LoopingRule, n)
         # Rule 11: sub-rules must repeat exactly n times, iterate over n
         first_rule = Regex( rules_dict[ inner.rules[1].rules[1] ])
         last_rule = Regex( rules_dict[ inner.rules[1].rules[2] ])
-        out = Regex( "(?:" * first_rule.pattern * "){$n}" * "(?:" * last_rule.pattern * "){$n}" )
+        # Recursive regex from Doug on Zulip
+        out = Regex("((?:$(first_rule.pattern))(?1)?(?:$(last_rule.pattern)))")
         return out
     end
 end
-n = Ref(1) # global ref
-Regex(r::LoopingRule) = Regex(r,n[])
 
 import Base.*
 *(a::AbstractRule, b::AbstractRule) = SimpleRule( Regex(a) * Regex(b) )
@@ -103,13 +102,8 @@ end
 function part2()
     data = read_input("input.txt")
     read_input("newrules.txt",false)
-    total = 0
-    for i = 1:5
-        global n[] = i
-        r = Regex("^" * Regex( rules_dict[0] ).pattern * "\$")
-        total += sum( endswith.(data,r) )
-    end
-    total
+    r = Regex("^" * Regex( rules_dict[0] ).pattern * "\$")
+    sum( endswith.(data,r) )
     # 318
 end
 
