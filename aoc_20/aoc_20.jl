@@ -254,8 +254,7 @@ function get_corners( tiles::Dict{Int,Tile})
     corners
 end
 
-function part1()
-    tiles = aoc_20.read_input("input.txt")
+function part1(tiles = read_input("input.txt"))
     prod( aoc_20.get_corners( tiles ) )
     # 23497974998093
 end
@@ -267,10 +266,8 @@ function load_pattern(filename = "pattern.txt")
 end
 
 using ImageFiltering
-function part2()
-    tiles = aoc_20.read_input("input.txt")
+function part2(tiles = aoc_20.read_input("input.txt"), pattern = aoc_20.load_pattern())
     actual_image = aoc_20.assemble_image(tiles)
-    pattern = aoc_20.load_pattern()
     n_pixels_pattern = sum(pattern)
     # Find how many patterns there are across flips and rotations
     total = 0
