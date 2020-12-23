@@ -22,27 +22,28 @@ module aoc_23
         select = 1
         #A = deepcopy(input)
         A = input
-        @info "Finding min and max"
+        # @info "Finding min and max"
         min_cup = minimum(A)
-        @info "Minimum", min_cup
+        # @info "Minimum", min_cup
         max_cup = maximum(A)
-        @info "Maximum", max_cup
+        # @info "Maximum", max_cup
 
         # println(A)
         # println(typeof(A))
 
         for i=1:n
-            if i < 10
-                @info i
-            end
-            if i % 100_000 == 0
+            if i % 1_000_000 == 0
                 @info i
             end
             selected = select+1:select+3
             current = A[ select ]
             destination = current - 1
+            # For CircularListArray the following will return a CircularList
             snip = A[ selected ]
-            deleteat!(A, selected)
+            if !isa(A, CircularListArray)
+                # We will does this while we insert
+                deleteat!(A, selected)
+            end
             if destination < min_cup
                 destination = max_cup
             end
@@ -73,16 +74,12 @@ module aoc_23
     end
 
     function insertaftervalue!(A::CircularListArray, value, inserter)
-        c = current(A.list)
-        # node = findfirstnode(isequal(value), A.list)
-        node = A.dict[value]
-        jump!(A.list, node.next)
-        insert!(A, 1, inserter)
-        for i=1:length(inserter)
-            A.dict[node.next.data] = node.next
-            node = node.next
-        end
-        jump!(A.list, c)
+        # c = current(A.list)
+        node = findfirstnode(isequal(value), A)
+        # node = A.dict[value]
+        # jump!(A.list, node.next)
+        insert!(A, node, inserter)
+        # jump!(A.list, c)
     end
 
     function report( A )
@@ -112,6 +109,7 @@ module aoc_23
         play( A , n )
         cup_1 = findfirst(isequal(1), A)
         println( A[cup_1+1:cup_1+2] )
+        A
         # 157047826689
     end
 end

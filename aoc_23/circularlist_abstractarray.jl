@@ -23,14 +23,14 @@
         node = getnode(CL, i)
         node.data
     end
-    function getindex(CL::List, r::UnitRange{T}) where T
-        out = Vector{T}( undef, length(r) )
-        node = getnode( CL, first(r) )
-        for i=1:length(r)
-            out[i] = node.data
-            node = node.next
+    function getindex(CL::List{T}, r::UnitRange) where T
+        n = length(r)
+        nodes = Vector{Node{T}}( undef, n )
+        nodes[1] = getnode( CL, first(r) )
+        for i=2:n
+            nodes[i] = nodes[i-1].next
         end
-        out
+        sublist = List{T}(nodes, nodes[1], n, n, n)
     end
     function getindex(CL::List, I::Int...)
         if length(I) == 0
@@ -64,6 +64,44 @@
             insert!(CL, convert(T,item))
         end
         CL.current = current
+        CL
+    end
+    "Insert items::List{T} such that the items.node[1] is at index i"
+    function insert!(CL::List{T}, i::Integer, items::List{T}) where T
+        insert!(CL, getnode( CL, i - 1), items)
+    end
+    "Insert items::List{T} after node"
+    function insert!(CL::List{T}, node::Node{T}, items::List{T}) where T
+        # No allocations needed!
+        #current = CL.current
+        #jump!( CL, getnode(CL,i-1) )
+        if node in items.nodes
+            error("Cannot insert items into themselves")
+        end
+
+        # Remove snippet from where it came from first
+        source_prev = items.nodes[1].prev
+        source_next = items.nodes[end].next
+
+        # Link old ends
+        source_prev.next = source_next
+        source_next.prev = source_prev
+
+        # Identify nodes at target
+        # We must do this at the beginning
+        target_prev = node 
+        target_next = target_prev.next
+
+        # Connect beginning of insert
+        target_prev.next = items.nodes[1]
+        items.nodes[1].prev = target_prev
+
+        # Connect end of insert
+        items.nodes[end].next = target_next
+        target_next.prev = items.nodes[end]
+
+        # Reset head node to where it was
+        #CL.current = current
         CL
     end
     function copy(CL::List{T}) where {T}
@@ -106,3 +144,26 @@
 
     # Node
     getindex(node::Node) = node.data
+    function getindex(node::Node, i::Int)
+        i -= 1
+        if i >= 0
+            for i=1:i
+                node = node.next
+            end
+        else
+            for i=1:abs(i)
+                node = node.prev
+            end
+        end
+        node
+    end
+    function getindex(node::Node, r::UnitRange)
+        node = node[ first(r) ]
+        collect( Iterators.take(node, length(r)) )
+    end
+    import Base: iterate, eltype, IteratorSize
+    function iterate(node::Node, state = node)
+        (state, state.next)
+    end
+    eltype(::Type{Node{T}}) where T = Node{T}
+    IteratorSize(::Type{Node{T}}) where T = Base.IsInfinite()
