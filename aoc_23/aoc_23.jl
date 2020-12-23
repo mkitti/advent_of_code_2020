@@ -127,6 +127,15 @@ module aoc_23
         end
         counter
     end
+    function findfirstnode( predicate::Function, CL::List )
+        current = CL.current
+        node = current
+        while !predicate(node.data)
+            node = node.next
+        end
+        node
+    end
+
 
     # Node
     getindex(node::Node) = node.data
@@ -136,31 +145,50 @@ module aoc_23
     export CircularListArray
     struct CircularListArray{T} <: AbstractArray{T,1}
         list::List{T}
+        dict::Dict{T,Node{T}}
     end
-    CircularListArray(x...) = CircularListArray( circularlist(x...) )
+    function CircularListArray(x)
+        list = circularlist(x)
+        dict = Dict( zip(x, list.nodes) )
+        CircularListArray( list, dict )
+    end
     size(cla::CircularListArray) = size(cla.list)
     getindex(cla::CircularListArray, x) = getindex(cla.list, x)
     setindex!(cla::CircularListArray, v, i::Int) = setindex!(cla.list, v, i)
     setindex!(cla::CircularListArray, X, I::UnitRange) = setindex!(cla.list, X, I)
     IndexStyle(::CircularListArray) = IndexLinear()
-    deleteat!(cla::CircularListArray, x) = deleteat!(cla.list, x)
-    insert!(cla::CircularListArray, x...) = insert!(cla.list, x...)
+    function deleteat!(cla::CircularListArray, x)
+        pop!.( (cla.dict,) , cla.list[x])
+        deleteat!(cla.list, x)
+    end
+    function insert!(cla::CircularListArray, i::Integer, x)
+        # TODO move dict logic here
+        insert!(cla.list, i, x)
+    end
     copy(cla::CircularListArray) = CircularListArray( copy(cla.list) )
     findfirst(predicate::Function, cla::CircularListArray) = findfirst( predicate, cla.list )
-    
+    import Base: maximum, minimum
+    maximum(cla::CircularListArray) = maximum(cla.list)
+    minimum(cla::CircularListArray) = minimum(cla.list)
 
     function play( input = input_array , n = 100)
         select = 1
         #A = deepcopy(input)
         A = input
+        @info "Finding min and max"
         min_cup = minimum(A)
+        @info "Minimum", min_cup
         max_cup = maximum(A)
+        @info "Maximum", max_cup
 
         # println(A)
         # println(typeof(A))
 
         for i=1:n
-            if i % 100 == 0
+            if i < 10
+                @info i
+            end
+            if i % 100_000 == 0
                 @info i
             end
             selected = select+1:select+3
@@ -197,6 +225,19 @@ module aoc_23
         insert!(A, dest_ind, inserter)
     end
 
+    function insertaftervalue!(A::CircularListArray, value, inserter)
+        c = current(A.list)
+        # node = findfirstnode(isequal(value), A.list)
+        node = A.dict[value]
+        jump!(A.list, node.next)
+        insert!(A, 1, inserter)
+        for i=1:length(inserter)
+            A.dict[node.next.data] = node.next
+            node = node.next
+        end
+        jump!(A.list, c)
+    end
+
     function report( A )
         cup_1 = findfirst(isequal(1), A)
         print.(A[cup_1+1:cup_1+8])
@@ -219,9 +260,11 @@ module aoc_23
 
     function part2( input = input_array)
         input = deepcopy( input )
-        one_million = CircularListArray([input; maximum(input)+1:1_000_000])
-        play( one_million , 10_000_000 )
-        cup_1 = findfirst(A .== 1)
+        A = CircularListArray([input; maximum(input)+1:1_000_000])
+        @info "One million array created"
+        play( A , 10_000_000 )
+        cup_1 = findfirst(isequal(1), A)
         println( A[cup_1+1:cup_1+2] )
+        # 157047826689
     end
 end
