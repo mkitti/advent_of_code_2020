@@ -10,166 +10,13 @@ module aoc_23
 
     const demo_destinations = [2, 7, 3, 7, 3, 9, 8, 1, 5, 3]
 
-    import Base: deleteat!, insert!, findfirst
-    function deleteat!(a::CircularArray{T,1,A}, r::UnitRange{U}) where {T, A, U <: Integer}
-        ind = mod1.(r, length(a))
-        deleteat!(a.data, sort(ind))
-        a
-    end
+    # CircularArray delete / insert enhancement
+    include("circulararray.jl")
 
-    function insert!(a::CircularArray{T,1,A}, i::Integer, item) where {T,A}
-        ind = mod1(i, length(a))
-        insert!(a.data, ind, item)
-    end
-    function insert!(a::CircularArray{T,1,A}, i::Integer, items::AbstractArray{T,1}) where {T,A}
-        ind = mod1(i, length(a))
-        insert!.( (a.data,), ind, reverse(items))
-        a
-    end
-    function findfirst(predicate::Function, a::CircularArray)
-        findfirst(predicate, a.data)
-    end
+    # CircularArrayList actually subtypes AbstractArray
+    # We also added a dict into it
+    include("CircularListArray.jl")
 
-    import CircularList: List, Node
-    import Base: getindex, setindex!, size, IndexStyle
-    function getnode(CL::List, i::Int)
-        node = head(CL)
-        forward_steps = mod(i-1, length(CL))
-        if forward_steps == 0
-            return node
-        end
-        backward_steps = abs(mod(i-1, -length(CL)))
-        if forward_steps <= backward_steps
-            for i=1:forward_steps
-                node = node.next
-            end
-        else
-            for i=1:backward_steps
-                node = node.prev
-            end
-        end
-        node
-    end
-    function getindex(CL::List, i::Int)
-        node = getnode(CL, i)
-        node.data
-    end
-    function getindex(CL::List, r::UnitRange{T}) where T
-        out = Vector{T}( undef, length(r) )
-        node = getnode( CL, first(r) )
-        for i=1:length(r)
-            out[i] = node.data
-            node = node.next
-        end
-        out
-    end
-    function getindex(CL::List, I::Int...)
-        if length(I) == 0
-            CL.current
-        else
-            getindex(CL, I[1])
-        end
-    end
-    function setindex!(CL::List{T}, v, i::Int) where T
-        node = getnode(CL, i)
-        node.data = v
-    end
-    function setindex!(CL::List{T}, v, r::UnitRange{S}) where {T, S}
-        node = getnode(CL, first(r))
-        for i=1:length(r)
-            node.data = v[ mod1(i, length(v) ) ]
-            node = node.next
-        end
-    end
-    function insert!(CL::List{T}, i::Integer, item) where {T}
-        current = CL.current
-        jump!( CL, getnode(CL,i-1) )
-        insert!(CL, item)
-        CL.current = current
-        CL
-    end
-    function insert!(CL::List{T}, i::Integer, items::AbstractVector{S}) where {T,S}
-        current = CL.current
-        jump!( CL, getnode(CL,i-1) )
-        for item in items
-            insert!(CL, convert(T,item))
-        end
-        CL.current = current
-        CL
-    end
-    import Base: copy
-    function copy(CL::List{T}) where {T}
-        List{T}(CL.nodes, CL.current, CL.length, CL.last, CL.capacity)
-    end
-    function deleteat!(CL::List, i::Integer)
-        current = CL.current
-        jump!( CL, getnode( CL, i ) )
-        delete!(CL)
-        CL.current = current
-        CL
-    end
-    function deleteat!(CL::List, r::UnitRange)
-        current = CL.current
-        jump!( CL, getnode( CL, last(r) ) )
-        for i=1:length(r)
-            delete!(CL)
-        end
-        # CL.current = current
-        CL
-    end
-    function findfirst( predicate::Function, CL::List )
-        current = CL.current
-        node = current
-        counter = 1
-        while !predicate(node.data)
-            node = node.next
-            counter += 1
-        end
-        counter
-    end
-    function findfirstnode( predicate::Function, CL::List )
-        current = CL.current
-        node = current
-        while !predicate(node.data)
-            node = node.next
-        end
-        node
-    end
-
-
-    # Node
-    getindex(node::Node) = node.data
-
-
-    # CircularArrayList
-    export CircularListArray
-    struct CircularListArray{T} <: AbstractArray{T,1}
-        list::List{T}
-        dict::Dict{T,Node{T}}
-    end
-    function CircularListArray(x)
-        list = circularlist(x)
-        dict = Dict( zip(x, list.nodes) )
-        CircularListArray( list, dict )
-    end
-    size(cla::CircularListArray) = size(cla.list)
-    getindex(cla::CircularListArray, x) = getindex(cla.list, x)
-    setindex!(cla::CircularListArray, v, i::Int) = setindex!(cla.list, v, i)
-    setindex!(cla::CircularListArray, X, I::UnitRange) = setindex!(cla.list, X, I)
-    IndexStyle(::CircularListArray) = IndexLinear()
-    function deleteat!(cla::CircularListArray, x)
-        pop!.( (cla.dict,) , cla.list[x])
-        deleteat!(cla.list, x)
-    end
-    function insert!(cla::CircularListArray, i::Integer, x)
-        # TODO move dict logic here
-        insert!(cla.list, i, x)
-    end
-    copy(cla::CircularListArray) = CircularListArray( copy(cla.list) )
-    findfirst(predicate::Function, cla::CircularListArray) = findfirst( predicate, cla.list )
-    import Base: maximum, minimum
-    maximum(cla::CircularListArray) = maximum(cla.list)
-    minimum(cla::CircularListArray) = minimum(cla.list)
 
     function play( input = input_array , n = 100)
         select = 1
@@ -258,11 +105,11 @@ module aoc_23
         @test all( .==( A[cup_1+1:cup_1+8], part1_real_answer ) )
     end
 
-    function part2( input = input_array)
+    function part2( input = input_array, n = 10_000_000 )
         input = deepcopy( input )
         A = CircularListArray([input; maximum(input)+1:1_000_000])
         @info "One million array created"
-        play( A , 10_000_000 )
+        play( A , n )
         cup_1 = findfirst(isequal(1), A)
         println( A[cup_1+1:cup_1+2] )
         # 157047826689
