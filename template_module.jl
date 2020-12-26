@@ -25,6 +25,9 @@ module aoc_01
     end
 
     function test_part1()
+        @testset "Part 1" begin
+            @test true
+        end
         part1( demo )
     end
 
@@ -32,6 +35,9 @@ module aoc_01
     end
 
     function test_part2()
+        @testset "Part 2" begin
+            @test true
+        end
         part2( demo )
     end
 
