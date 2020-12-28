@@ -289,6 +289,17 @@ function part2(tiles = aoc_20.read_input("input.txt"), pattern = aoc_20.load_pat
     # 2256
 end
 
+function __init__()
+    if !isinteractive()
+        run()
+    end
+end
+
+function run()
+    input = read_input("input.txt")
+    @show part1( input )
+    @show part2( input )
+end
 
 end
 
