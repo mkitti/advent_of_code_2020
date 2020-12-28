@@ -290,7 +290,7 @@ function part2(tiles = aoc_20.read_input("input.txt"), pattern = aoc_20.load_pat
 end
 
 function __init__()
-    @show "Initializing module!!"
+    println("Initializing Advent of Code Day 20 Solution by Mark Kittisopikul: aoc_20.jl")
     if !isinteractive()
         run()
     end
