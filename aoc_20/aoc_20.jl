@@ -290,15 +290,24 @@ function part2(tiles = aoc_20.read_input("input.txt"), pattern = aoc_20.load_pat
 end
 
 function __init__()
+    @show "Initializing module!!"
     if !isinteractive()
         run()
     end
 end
 
 function run()
-    input = read_input("input.txt")
-    @show part1( input )
-    @show part2( input )
+    if isempty(ARGS)
+        files = ["input.txt"]
+    else
+        files = ARGS
+    end
+    for file in files
+        @show file
+        input = read_input(file)
+        @show part1( input )
+        @show part2( input )
+    end
 end
 
 end
