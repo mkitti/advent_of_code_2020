@@ -36,6 +36,10 @@ function read_input(filename)
             push!(buffer, Vector{Char}(line) .== '#')
         end
     end
+    if tile_number != -1
+        image = permutedims( hcat(buffer...) )
+        tiles[ tile_number ] = Tile( tile_number, image, edges(image))
+    end
     tiles
 end
 
@@ -229,6 +233,8 @@ function orient_tile_down_right( current, down, right)
         return permutedims(current.image)
     elseif down_ori == :right && right_ori == :top
         return rotr90(current.image)
+    elseif down_ori == :left && right_ori == :top
+        return permutedims( rot180( current.image ) )
     end
 
     # more needed
@@ -272,11 +278,11 @@ function part2(tiles = aoc_20.read_input("input.txt"), pattern = aoc_20.load_pat
     # Find how many patterns there are across flips and rotations
     total = 0
     for i=1:4
-        total += sum(imfilter(Float64,rotr90(actual_image,i),pattern) .≈ n_pixels_pattern)
+        total += sum(imfilter(Float64,actual_image,rotr90(pattern,i)) .≈ n_pixels_pattern)
     end
-    actual_image = permutedims(actual_image)
+    pattern = permutedims(pattern)
     for i=1:4
-        total += sum(imfilter(Float64,rotr90(actual_image,i),pattern) .≈ n_pixels_pattern)
+        total += sum(imfilter(Float64,actual_image,rotr90(pattern,i)) .≈ n_pixels_pattern)
     end
     total
     sum(actual_image) - total*n_pixels_pattern
